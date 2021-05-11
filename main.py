@@ -1,17 +1,14 @@
 import os
 import pygame
 
-screen_dimensions = screen_width, screen_height = 800, 600
-game_name = 'Pong'
-
-def clear_screen(screen):
-    screen.fill((0,0,0))
-
 def add(a, b):
     return tuple(map(lambda x, y: x + y, a, b))
 
 def scale(a, c):
     return tuple(map(lambda x: x * c, a))
+
+def clear_screen(screen):
+    screen.fill((0,0,0))
 
 class GameObject(object):
 
@@ -19,15 +16,12 @@ class GameObject(object):
         self.color = color
         self.rect = pygame.Rect(position, size)
         self.velocity = (0, 0)
-        self.acceleration = (0, 0)
-        self.rectangle = self.texture.get_rect()
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
 
     def update_position(self):
-        self.set_velocity(add(self.velocity, self.acceleration))
-        self.set_postion(add(self.position, self.velocity))
+        self.set_postion(add(self.rect.topleft, self.velocity))
 
     def set_postion(self, position):
         self.rect.x = position[0]
@@ -36,28 +30,34 @@ class GameObject(object):
     def set_velocity(self, velocity):
         self.velocity = velocity
 
-    def set_acceleration(self, acceleration):
-        self.acceleration = acceleration
-
 def main():
 
+    screen_dimensions = (800, 600)
+    fps = 60
+    paddle_dimensions = (20, 100)
+    player_paddle_init_pos = (0, screen_dimensions[1] / 2 - paddle_dimensions[1] / 2)
+
     pygame.init()
-    pygame.display.set_caption(game_name)
+    pygame.display.set_caption('Pong')
     screen = pygame.display.set_mode(screen_dimensions)
 
     game_objects = list()
 
+    player_paddle = GameObject(player_paddle_init_pos, paddle_dimensions)
+    game_objects.append(player_paddle)
+
     # Input variables
-    a_pressed = False
-    d_pressed = False
     w_pressed = False
     s_pressed = False
     space_pressed = False
-
     mouse_pos = (0, 0)
 
+    previous_time = pygame.time.get_ticks()
     running = True
     while running:
+
+        delta_time = pygame.time.get_ticks() - previous_time 
+        previous_time = pygame.time.get_ticks()
 
         ### GET INPUT ###
         for event in pygame.event.get():
@@ -66,10 +66,6 @@ def main():
                 running = False
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_a:
-                    a_pressed = True
-                if event.key == pygame.K_d:
-                    d_pressed = True
                 if event.key == pygame.K_w:
                     w_pressed = True
                 if event.key == pygame.K_s:
@@ -80,10 +76,6 @@ def main():
                     running = False
 
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_a:
-                    a_pressed = False
-                if event.key == pygame.K_d:
-                    d_pressed = False
                 if event.key == pygame.K_w:
                     w_pressed = False
                 if event.key == pygame.K_s:
@@ -95,52 +87,36 @@ def main():
                 mouse_pos = pygame.mouse.get_pos()
             
             left_clicking = pygame.mouse.get_pressed()[0]
-            middle_clicking = pygame.mouse.get_pressed()[1]
-            right_clicking = pygame.mouse.get_pressed()[2]
             
         ### GAME LOGIC ###
-        if d_pressed and w_pressed:
-            pass
-        elif a_pressed and w_pressed:
-            pass
-        elif d_pressed and s_pressed:
-            pass
-        elif a_pressed and s_pressed:
-            pass
-        elif a_pressed:
-            pass
-        elif d_pressed:
-            pass
-        elif w_pressed:
-            pass
-        elif s_pressed:
-            pass
-        else:
-            pass
-
-        if d_pressed and a_pressed:
-            pass
-
+ 
         if w_pressed and s_pressed:
-            pass
+            player_paddle.set_velocity((0,0))
+        elif w_pressed:
+            player_paddle.set_velocity((0,-1 * delta_time))
+        elif s_pressed:
+            player_paddle.set_velocity((0,1 * delta_time))
+        else:
+            player_paddle.set_velocity((0,0))
+        if space_pressed:
+            player_paddle.set_postion(player_paddle_init_pos)
 
         if left_clicking:
-            pass
-
+            player_paddle.set_postion(mouse_pos)
 
         for game_object in game_objects:
-            if isinstance(game_object, GameObject):
-                game_object.update_position()
+            game_object.update_position()
+
+        if player_paddle.rect.x < 0:
+            game_object.set_postion(0, player_paddle.rect.y)
 
         ### DISPLAY ###
-        if int(pygame.time.get_ticks()) % 20 == 0:
+        if int(pygame.time.get_ticks()) %  (1000 // 60) == 0:
 
             clear_screen(screen)
             for game_object in game_objects:
-                if isinstance(game_object, GameObject):
-                    game_object.draw(screen)
-
-        pygame.display.update()
+                game_object.draw(screen)
+            pygame.display.update()
 
 
 
