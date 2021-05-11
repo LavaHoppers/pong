@@ -1,13 +1,8 @@
 import os
 import pygame
 
-texture_scale = 2
 screen_dimensions = screen_width, screen_height = 800, 600
-game_name = 'PIXEL'
-
-player_walking_speed = 1
-
-t_brick = os.path.join('img', 'brick.png')
+game_name = 'Pong'
 
 def clear_screen(screen):
     screen.fill((0,0,0))
@@ -20,34 +15,23 @@ def scale(a, c):
 
 class GameObject(object):
 
-    def __init__(self, position, texture_path):
-
-        self.position = position
+    def __init__(self, position, size, color = (255, 255, 255)):
+        self.color = color
+        self.rect = pygame.Rect(position, size)
         self.velocity = (0, 0)
         self.acceleration = (0, 0)
-
-        self.texture = self.load_image(texture_path)
-        self.texture_flipped = False
         self.rectangle = self.texture.get_rect()
-        
 
     def draw(self, screen):
-        screen.blit(pygame.transform.flip(self.texture, self.texture_flipped,
-        False), self.rectangle)
+        pygame.draw.rect(screen, self.color, self.rect)
 
     def update_position(self):
         self.set_velocity(add(self.velocity, self.acceleration))
         self.set_postion(add(self.position, self.velocity))
 
-    def load_image(self, image_path):
-        img = pygame.image.load(image_path)
-        return pygame.transform.scale(img, (int(img.get_width() * texture_scale),
-        int(img.get_height() * texture_scale)))
-
     def set_postion(self, position):
-        self.position = position
-        self.rectangle.x = position[0]
-        self.rectangle.y = position[1]
+        self.rect.x = position[0]
+        self.rect.y = position[1]
     
     def set_velocity(self, velocity):
         self.velocity = velocity
@@ -58,14 +42,10 @@ class GameObject(object):
 def main():
 
     pygame.init()
-    screen = pygame.display.set_mode(screen_dimensions)
     pygame.display.set_caption(game_name)
-    #clock = pygame.time.Clock()
-
-    player = GameObject(0, 0, t_brick)
+    screen = pygame.display.set_mode(screen_dimensions)
 
     game_objects = list()
-    game_objects.append(player)
 
     # Input variables
     a_pressed = False
@@ -117,46 +97,35 @@ def main():
             left_clicking = pygame.mouse.get_pressed()[0]
             middle_clicking = pygame.mouse.get_pressed()[1]
             right_clicking = pygame.mouse.get_pressed()[2]
-            #print(mouse_pos, left_clicking, right_clicking)
             
-
         ### GAME LOGIC ###
         if d_pressed and w_pressed:
-            player.set_velocity((player_walking_speed, -player_walking_speed))
+            pass
         elif a_pressed and w_pressed:
-            player.set_velocity((-player_walking_speed, -player_walking_speed))
+            pass
         elif d_pressed and s_pressed:
-            player.x_vel = player_walking_speed
-            player.y_vel = player_walking_speed
+            pass
         elif a_pressed and s_pressed:
-            player.x_vel = -player_walking_speed
-            player.y_vel = player_walking_speed
+            pass
         elif a_pressed:
-            player.x_vel = -player_walking_speed
-            player.y_vel = 0
+            pass
         elif d_pressed:
-            player.x_vel = player_walking_speed
-            player.y_vel = 0
+            pass
         elif w_pressed:
-            player.x_vel = 0
-            player.y_vel = -player_walking_speed
+            pass
         elif s_pressed:
-            player.x_vel = 0
-            player.y_vel = player_walking_speed
+            pass
         else:
-            player.x_vel = 0
-            player.y_vel = 0
+            pass
 
         if d_pressed and a_pressed:
-            player.x_vel = 0
+            pass
 
         if w_pressed and s_pressed:
-            player.y_vel = 0
+            pass
 
         if left_clicking:
-            shot = GameObject(player.rectangle.x, player.rectangle.y, t_brick)
-            shot.x_vel = 1
-            game_objects.append(shot)
+            pass
 
 
         for game_object in game_objects:
@@ -164,10 +133,13 @@ def main():
                 game_object.update_position()
 
         ### DISPLAY ###
-        clear_screen(screen)
-        for game_object in game_objects:
-            if isinstance(game_object, GameObject):
-                game_object.draw(screen)
+        if int(pygame.time.get_ticks()) % 20 == 0:
+
+            clear_screen(screen)
+            for game_object in game_objects:
+                if isinstance(game_object, GameObject):
+                    game_object.draw(screen)
+
         pygame.display.update()
 
 
