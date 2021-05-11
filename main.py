@@ -21,11 +21,7 @@ class GameObject(object):
         pygame.draw.rect(screen, self.color, self.rect)
 
     def update_position(self):
-        self.set_postion(add(self.rect.topleft, self.velocity))
-
-    def set_postion(self, position):
-        self.rect.x = position[0]
-        self.rect.y = position[1]
+        self.rect.move_ip(self.velocity)
     
     def set_velocity(self, velocity):
         self.velocity = velocity
@@ -36,6 +32,8 @@ def main():
     fps = 60
     paddle_dimensions = (20, 100)
     player_paddle_init_pos = (0, screen_dimensions[1] / 2 - paddle_dimensions[1] / 2)
+    enemy_paddle_init_pos = (screen_dimensions[0] - paddle_dimensions[0], screen_dimensions[1] / 2 - paddle_dimensions[1] / 2)
+    paddle_speed = 1
 
     pygame.init()
     pygame.display.set_caption('Pong')
@@ -44,7 +42,9 @@ def main():
     game_objects = list()
 
     player_paddle = GameObject(player_paddle_init_pos, paddle_dimensions)
+    enemy_paddle = GameObject(enemy_paddle_init_pos, paddle_dimensions)
     game_objects.append(player_paddle)
+    game_objects.append(enemy_paddle)
 
     # Input variables
     w_pressed = False
@@ -91,24 +91,24 @@ def main():
         ### GAME LOGIC ###
  
         if w_pressed and s_pressed:
-            player_paddle.set_velocity((0,0))
+            player_paddle.velocity = (0,0)
         elif w_pressed:
-            player_paddle.set_velocity((0,-1 * delta_time))
+            player_paddle.velocity = (0, -paddle_speed * delta_time)
         elif s_pressed:
-            player_paddle.set_velocity((0,1 * delta_time))
+            player_paddle.velocity = (0, paddle_speed * delta_time)
         else:
-            player_paddle.set_velocity((0,0))
+            player_paddle.velocity = (0,0)
         if space_pressed:
-            player_paddle.set_postion(player_paddle_init_pos)
+            pass
 
         if left_clicking:
-            player_paddle.set_postion(mouse_pos)
+            pass
 
         for game_object in game_objects:
             game_object.update_position()
 
-        if player_paddle.rect.x < 0:
-            game_object.set_postion(0, player_paddle.rect.y)
+        if player_paddle.rect.y < 0:
+            pass
 
         ### DISPLAY ###
         if int(pygame.time.get_ticks()) %  (1000 // 60) == 0:
