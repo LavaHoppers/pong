@@ -25,9 +25,11 @@ class Rectangle(object):
         self.pos = pos
         self.dim = dim
         self.vel = (0, 0)
+        self.displaying = True
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.pos + self.dim)
+        if self.displaying:
+            pygame.draw.rect(screen, self.color, self.pos + self.dim)
 
     def update_pos(self, delta_time):
         self.pos = add(self.pos, scale(self.vel, delta_time))
@@ -47,13 +49,15 @@ class Text(object):
         self.img = self.font.render(text, True, self.color)
         self.pos = 0, 0
         self.rect = self.img.get_rect()
+        self.displaying = True
 
     def set_pos(self, pos: tuple) -> None:
         self.pos = pos
     
     def draw(self, screen):
-        pygame.draw.rect(self.img, (38, 70, 83), self.rect, 1)
-        screen.blit(self.img, self.pos)
+        if self.displaying:
+           # pygame.draw.rect(self.img, (38, 70, 83), self.rect, 1)
+            screen.blit(self.img, self.pos)
 
     def set_text(self, text: str) -> None:
         self.img = self.font.render(text, True, self.color)
@@ -101,7 +105,8 @@ def main():
 
     player = Rectangle(player_init_pos, paddle_dim, (42, 157, 143))
     enemy = Rectangle(enemy_init_pos, paddle_dim, (231, 111, 81))
-    ball = Rectangle((-100, -100), ball_dim, (233, 196, 106))
+    ball = Rectangle(ball_init_pos, ball_dim, (233, 196, 106))
+    ball.displaying = False
     top = Rectangle((0, -50), (screen_dim[0], 50))
     bot = Rectangle((0, screen_dim[1]), (screen_dim[0], 50))
     left = Rectangle((-50, -50), (50, screen_dim[1] + 100))
@@ -161,9 +166,9 @@ def main():
         else:
             player.vel = 0, 0
         if space_pressed and new_round:
-            start_text1.set_text('')
-            start_text2.set_text('')
-            ball.pos = ball_init_pos
+            start_text1.displaying = False
+            start_text2.displaying = False
+            ball.displaying = True
             ball.vel = r_sign() * ball_speed, r_sign() * ball_speed
             new_round = False
 
@@ -176,13 +181,15 @@ def main():
         if ball_after.intersects(top) or ball_after.intersects(bot):
             ball.vel = ball.vel[0], -ball.vel[1]
         if ball_after.intersects(left):
-            ball.pos = -100, -100
+            ball.pos = ball_init_pos
+            ball.displaying = False
             ball.vel = 0, 0
             new_round = True
             enemy_score += 1
             enemy_score_text.set_text(str(enemy_score))
         if ball_after.intersects(right):
-            ball.pos = -100, -100
+            ball.pos = ball_init_pos
+            ball.displaying = False
             ball.vel = 0, 0
             new_round = True
             player_score += 1
