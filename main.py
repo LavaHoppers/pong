@@ -47,6 +47,7 @@ def main():
     ball_dim = 20, 20
     player_init_pos = 0, screen_dim[1] / 2 - paddle_dim[1] / 2
     enemy_init_pos = screen_dim[0] - paddle_dim[0], screen_dim[1] / 2 - paddle_dim[1] / 2
+    ball_init_pos = sub(scale(screen_dim, .5), scale(ball_dim, .5))
 
     player_speed = .75
     enemy_speed = .33
@@ -60,11 +61,11 @@ def main():
 
     player = Rectangle(player_init_pos, paddle_dim)
     enemy = Rectangle(enemy_init_pos, paddle_dim)
-    ball = Rectangle(scale(screen_dim, .5), ball_dim, (0, 122, 255))
+    ball = Rectangle(ball_init_pos, ball_dim, (0, 122, 255))
     top = Rectangle((0, -50), (screen_dim[0], 50))
     bot = Rectangle((0, screen_dim[1]), (screen_dim[0], 50))
-    left = Rectangle((-50, 0), (50, screen_dim[1]))
-    right = Rectangle((screen_dim[0], 0), (50, screen_dim[1]))
+    left = Rectangle((-50, -50), (50, screen_dim[1] + 100))
+    right = Rectangle((screen_dim[0], -50), (50, screen_dim[1] + 100))
 
 
     game_objects.append(ball)
@@ -73,13 +74,14 @@ def main():
 
 
 
-    ball.vel = r_sign() * ball_speed, r_sign() * ball_speed
+    ball.vel = 0, 0
 
     # Input variables
     w_pressed = False
     s_pressed = False
     space_pressed = False
 
+    new_round = True
     previous_time = pygame.time.get_ticks()
     running = True
     while running:
@@ -112,6 +114,7 @@ def main():
                     space_pressed = False
             
         ### GAME LOGIC ###
+        
         if w_pressed and s_pressed:
             player.vel = 0, 0
         elif w_pressed:
@@ -120,22 +123,30 @@ def main():
             player.vel = 0, player_speed
         else:
             player.vel = 0, 0
-        if space_pressed:
-            pass
+        if space_pressed and new_round:
+            ball.vel = r_sign() * ball_speed, r_sign() * ball_speed
+            new_round = False
 
-        if ball.intersects(player) or ball.intersects(enemy):
-            ball.vel = -ball.vel[0], ball.vel[1]
-        if ball.intersects(top) or ball.intersects(bot):
+        ball_after = Rectangle(add(ball.pos, ball.vel), ball.dim)
+
+        if ball_after.intersects(player):
+            ball.vel = ball_speed * random.uniform(.75, 1.25), ball_speed * r_sign() * random.uniform(.75, 1.25)
+        if ball_after.intersects(enemy):
+            ball.vel = ball_speed * -random.uniform(.75, 1.25), ball_speed * r_sign() * random.uniform(.75, 1.25)
+        if ball_after.intersects(top) or ball_after.intersects(bot):
             ball.vel = ball.vel[0], -ball.vel[1]
-        if ball.intersects(left) or ball.intersects(right):
-            ball.pos = scale(screen_dim, .5)
-            ball.vel = r_sign() * ball.vel[0], r_sign() * ball.vel[1]
+        if ball_after.intersects(left) or ball_after.intersects(right):
+            ball.pos = ball_init_pos
+            ball.vel = (0,0)
+            new_round = True
         
 
-
-        dif = (ball.pos[1] + ball.dim[1] / 2) - (enemy.pos[1] + enemy.dim[1] / 2)
-        if dif != 0:
-            enemy.vel = 0, dif / abs(dif) * enemy_speed
+        if new_round:
+            enemy.vel = 0, 0
+        else:
+            dif = (ball.pos[1] + ball.dim[1] / 2) - (enemy.pos[1] + enemy.dim[1] / 2)
+            if dif != 0:
+                enemy.vel = 0, dif / abs(dif) * enemy_speed
 
         for game_object in game_objects:
             game_object.update_pos(delta_time)
