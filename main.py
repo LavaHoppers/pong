@@ -103,6 +103,16 @@ def main():
     game_objects.append(start_text1)
     game_objects.append(start_text2)
 
+    game_over = False
+    winning_text = Text('roboto.ttf', 122, "You Won!", (42, 157, 143))
+    winning_text.set_pos((210, 260))
+    winning_text.displaying = False
+    losing_text = Text('roboto.ttf', 122, 'You Lost!', (231, 111, 81))
+    losing_text.set_pos((210, 260))
+    losing_text.displaying = False
+    game_objects.append(winning_text)
+    game_objects.append(losing_text)
+
     player = Rectangle(player_init_pos, paddle_dim, (42, 157, 143))
     enemy = Rectangle(enemy_init_pos, paddle_dim, (231, 111, 81))
     ball = Rectangle(ball_init_pos, ball_dim, (233, 196, 106))
@@ -166,11 +176,19 @@ def main():
         else:
             player.vel = 0, 0
         if space_pressed and new_round:
+            if game_over:
+                player_score = 0
+                player_score_text.set_text(str(player_score))
+                enemy_score = 0
+                enemy_score_text.set_text(str(enemy_score))
+                game_over = False
             start_text1.displaying = False
             start_text2.displaying = False
             ball.displaying = True
             ball.vel = r_sign() * ball_speed, r_sign() * ball_speed
             new_round = False
+            losing_text.displaying = False
+            winning_text.displaying = False
 
         ball_after = Rectangle(add(ball.pos, ball.vel), ball.dim)
 
@@ -215,6 +233,27 @@ def main():
         for game_object in game_objects:
             game_object.update_pos(delta_time)
 
+        if player_score >= 5:
+            game_over = True
+            winning_text.displaying = True
+            ball.vel = 0, 0
+            ball.pos = ball_init_pos
+            ball.displaying = False
+            start_text2.set_text("Press space to play again")
+            start_text2.set_pos((90,420))
+            start_text2.displaying = True
+        elif enemy_score >= 5:
+            game_over = True
+            losing_text.displaying = True
+            ball.vel = 0, 0
+            ball.pos = ball_init_pos
+            ball.displaying = False
+            new_round = True
+            start_text2.set_text("Press space to play again")
+            start_text2.set_pos((90,420))
+            start_text2.displaying = True
+        else:
+            pass
         ### DISPLAY ###
         if int(pygame.time.get_ticks()) % (1000 // fps) == 0:
 
