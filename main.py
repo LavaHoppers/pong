@@ -20,20 +20,21 @@ class GameObject(object):
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
 
-    def update_position(self):
-        self.rect.move_ip(self.velocity)
+    def update_position(self, delta_time):
+        self.rect.move_ip(scale(self.velocity, delta_time))
     
-    def set_velocity(self, velocity):
-        self.velocity = velocity
 
 def main():
 
-    screen_dimensions = (800, 600)
     fps = 60
-    paddle_dimensions = (20, 100)
-    player_paddle_init_pos = (0, screen_dimensions[1] / 2 - paddle_dimensions[1] / 2)
-    enemy_paddle_init_pos = (screen_dimensions[0] - paddle_dimensions[0], screen_dimensions[1] / 2 - paddle_dimensions[1] / 2)
+    screen_dimensions = 800, 600
+    paddle_dimensions = 20, 100
+    ball_dimensions = 20, 20
+    player_paddle_init_pos = 0, screen_dimensions[1] / 2 - paddle_dimensions[1] / 2
+    enemy_paddle_init_pos = screen_dimensions[0] - paddle_dimensions[0], screen_dimensions[1] / 2 - paddle_dimensions[1] / 2
+
     paddle_speed = 1
+    ball_speed = 1
 
     pygame.init()
     pygame.display.set_caption('Pong')
@@ -41,10 +42,18 @@ def main():
 
     game_objects = list()
 
+    game_area = pygame.Rect((0, 0), screen_dimensions)
+
     player_paddle = GameObject(player_paddle_init_pos, paddle_dimensions)
     enemy_paddle = GameObject(enemy_paddle_init_pos, paddle_dimensions)
+    ball = GameObject(scale(screen_dimensions, .5), ball_dimensions)
+    game_objects.append(ball)
     game_objects.append(player_paddle)
     game_objects.append(enemy_paddle)
+
+
+    # TODO remove
+    ball.velocity = ball_speed, 0
 
     # Input variables
     w_pressed = False
@@ -91,27 +100,33 @@ def main():
         ### GAME LOGIC ###
  
         if w_pressed and s_pressed:
-            player_paddle.velocity = (0,0)
+            player_paddle.velocity = 0,0
         elif w_pressed:
-            player_paddle.velocity = (0, -paddle_speed * delta_time)
+            player_paddle.velocity = 0, -paddle_speed 
         elif s_pressed:
-            player_paddle.velocity = (0, paddle_speed * delta_time)
+            player_paddle.velocity = 0, paddle_speed
         else:
-            player_paddle.velocity = (0,0)
+            player_paddle.velocity = 0, 0
         if space_pressed:
             pass
 
         if left_clicking:
-            pass
+            print(mouse_pos)
 
         for game_object in game_objects:
-            game_object.update_position()
+            game_object.update_position(delta_time)
 
-        if player_paddle.rect.y < 0:
-            pass
+        player_paddle.rect.clamp_ip(game_area)
+
+        if player_paddle.rect.colliderect(ball):
+            ball.velocity = -ball.velocity[0], ball.velocity[1]
+        
+        if enemy_paddle.rect.colliderect(ball):
+            ball.velocity = -ball.velocity[0], ball.velocity[1]
+
 
         ### DISPLAY ###
-        if int(pygame.time.get_ticks()) %  (1000 // 60) == 0:
+        if int(pygame.time.get_ticks()) % (1000 // fps) == 0:
 
             clear_screen(screen)
             for game_object in game_objects:
