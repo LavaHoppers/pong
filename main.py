@@ -1,8 +1,7 @@
-import os
 import pygame
 import random
 
-def add(a, b):
+def add(a: tuple, b: tuple) -> tuple:
     return tuple(map(lambda x, y: x + y, a, b))
 
 def sub(a, b):
@@ -38,26 +37,57 @@ class Rectangle(object):
         y_max = max(self.pos[1] + self.dim[1], other.pos[1] + other.dim[1]) - min(self.pos[1], other.pos[1])
         return (x_max < x_obs) and (y_max < y_obs)
     
+class Text(object):
+
+    def __init__(self, font, size, text):
+        self.font = pygame.font.SysFont(font, size)
+        self.img = self.font.render(text, True, (64, 64, 64))
+        self.pos = 0, 0
+        self.rect = self.img.get_rect()
+
+    def set_pos(self, pos: tuple) -> None:
+        self.pos = pos
+    
+    def draw(self, screen):
+        pygame.draw.rect(self.img, (0, 0, 0), self.rect, 1)
+        screen.blit(self.img, self.pos)
+
+    def set_text(self, text: str) -> None:
+        self.img = self.font.render(text, True, (64, 64, 64))
+
+    def update_pos(self, delta_time):
+        pass
 
 def main():
 
     fps = 240
     screen_dim = 800, 600
     paddle_dim = 20, 100
-    ball_dim = 20, 20
-    player_init_pos = 0, screen_dim[1] / 2 - paddle_dim[1] / 2
-    enemy_init_pos = screen_dim[0] - paddle_dim[0], screen_dim[1] / 2 - paddle_dim[1] / 2
+    ball_dim = 15, 15
+    player_init_pos = 40, screen_dim[1] / 2 - paddle_dim[1] / 2
+    enemy_init_pos = screen_dim[0] - paddle_dim[0] - 40, screen_dim[1] / 2 - paddle_dim[1] / 2
     ball_init_pos = sub(scale(screen_dim, .5), scale(ball_dim, .5))
 
     player_speed = .75
     enemy_speed = .33
-    ball_speed = .5
+    ball_speed = .45
 
     pygame.init()
     pygame.display.set_caption('Pong')
     screen = pygame.display.set_mode(screen_dim)
 
     game_objects = list()
+
+    player_score = 0
+    enemy_score = 0
+
+    player_score_text = Text('roboto.ttf', 122, str(player_score))
+    player_score_text.set_pos((180, 50))
+    game_objects.append(player_score_text)
+
+    enemy_score_text = Text('roboto.ttf', 122, str(enemy_score))
+    enemy_score_text.set_pos((580, 50))
+    game_objects.append(enemy_score_text)
 
     player = Rectangle(player_init_pos, paddle_dim)
     enemy = Rectangle(enemy_init_pos, paddle_dim)
@@ -67,12 +97,9 @@ def main():
     left = Rectangle((-50, -50), (50, screen_dim[1] + 100))
     right = Rectangle((screen_dim[0], -50), (50, screen_dim[1] + 100))
 
-
     game_objects.append(ball)
     game_objects.append(player)
     game_objects.append(enemy)
-
-
 
     ball.vel = 0, 0
 
@@ -135,10 +162,18 @@ def main():
             ball.vel = ball_speed * -random.uniform(.75, 1.25), ball_speed * r_sign() * random.uniform(.75, 1.25)
         if ball_after.intersects(top) or ball_after.intersects(bot):
             ball.vel = ball.vel[0], -ball.vel[1]
-        if ball_after.intersects(left) or ball_after.intersects(right):
+        if ball_after.intersects(left):
             ball.pos = ball_init_pos
             ball.vel = (0,0)
             new_round = True
+            enemy_score += 1
+            enemy_score_text.set_text(str(enemy_score))
+        if ball_after.intersects(right):
+            ball.pos = ball_init_pos
+            ball.vel = (0,0)
+            new_round = True
+            player_score += 1
+            player_score_text.set_text(str(player_score))
         
 
         if new_round:
@@ -158,6 +193,7 @@ def main():
             clear_screen(screen)
             for game_object in game_objects:
                 game_object.draw(screen)
+            
             pygame.display.update()
 
 
