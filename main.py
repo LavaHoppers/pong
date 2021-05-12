@@ -8,12 +8,6 @@ def add(a, b):
 def sub(a, b):
     return tuple(map(lambda x, y: x - y, a, b))
 
-def tuple_min(a, b):
-    return tuple(map(lambda x, y: min(x, y), a, b))
-
-def tuple_max(a, b):
-    return tuple(map(lambda x, y: max(x, y), a, b))
-
 def scale(a, c):
     return tuple(map(lambda x: x * c, a))
 
@@ -38,12 +32,11 @@ class Rectangle(object):
         self.pos = add(self.pos, scale(self.vel, delta_time))
 
     def intersects(self, other):
-        pos1 = tuple_min(self.pos, other.pos)
-        pos2 = tuple_max(add(self.pos, self.dim), add(other.pos, other.dim))
-        dim = sub(pos2, pos1)
-        area_observed = dim[0] * dim[1]
-        area_expected = (self.dim[0] + other.dim[0]) * (self.dim[1] + other.dim[1])
-        return area_expected >= area_observed
+        x_obs = self.dim[0] + other.dim[0]
+        y_obs = self.dim[1] + other.dim[1]
+        x_max = max(self.pos[0] + self.dim[0], other.pos[0] + other.dim[0]) - min(self.pos[0], other.pos[0])
+        y_max = max(self.pos[1] + self.dim[1], other.pos[1] + other.dim[1]) - min(self.pos[1], other.pos[1])
+        return (x_max < x_obs) and (y_max < y_obs)
     
 
 def main():
@@ -55,9 +48,9 @@ def main():
     player_init_pos = 0, screen_dim[1] / 2 - paddle_dim[1] / 2
     enemy_init_pos = screen_dim[0] - paddle_dim[0], screen_dim[1] / 2 - paddle_dim[1] / 2
 
-    player_speed = .5
-    enemy_speed = .2
-    ball_speed = .35
+    player_speed = .75
+    enemy_speed = .33
+    ball_speed = .5
 
     pygame.init()
     pygame.display.set_caption('Pong')
@@ -68,10 +61,10 @@ def main():
     player = Rectangle(player_init_pos, paddle_dim)
     enemy = Rectangle(enemy_init_pos, paddle_dim)
     ball = Rectangle(scale(screen_dim, .5), ball_dim, (0, 122, 255))
-    top = Rectangle((0, 0), (screen_dim[0], 1))
-    bot = Rectangle((0, screen_dim[1]), (screen_dim[0], 1))
-    left = Rectangle((0, 0), (1, screen_dim[1]))
-    right = Rectangle((screen_dim[0], 0), (1, screen_dim[1]))
+    top = Rectangle((0, -50), (screen_dim[0], 50))
+    bot = Rectangle((0, screen_dim[1]), (screen_dim[0], 50))
+    left = Rectangle((-50, 0), (50, screen_dim[1]))
+    right = Rectangle((screen_dim[0], 0), (50, screen_dim[1]))
 
 
     game_objects.append(ball)
@@ -140,7 +133,7 @@ def main():
         
 
 
-        dif = ball.pos[1] - enemy.pos[1]
+        dif = (ball.pos[1] + ball.dim[1] / 2) - (enemy.pos[1] + enemy.dim[1] / 2)
         if dif != 0:
             enemy.vel = 0, dif / abs(dif) * enemy_speed
 
