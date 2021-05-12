@@ -4,13 +4,16 @@ import pygame
 def add(a, b):
     return tuple(map(lambda x, y: x + y, a, b))
 
+def sub(a, b):
+    return tuple(map(lambda x, y: x - y, a, b))
+
 def scale(a, c):
     return tuple(map(lambda x: x * c, a))
 
 def clear_screen(screen):
     screen.fill((0, 0, 0))
 
-class GameObject(object):
+class Rectangle(object):
 
     def __init__(self, pos, dim, color = (255, 255, 255)):
         self.color = color
@@ -21,8 +24,16 @@ class GameObject(object):
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.pos + self.dim)
 
-    def update_position(self, delta_time):
+    def update_pos(self, delta_time):
         self.pos = add(self.pos, scale(self.vel, delta_time))
+
+    def intersects(self, other):
+        pos1 = min(self.pos[0], other.pos[0]), min(self.pos[1], other.pos[1])
+        pos2 = max(self.pos[0] + self.dim[0], other.pos[0] + other.dim[0]), max(self.pos[1] + self.dim[1], other.pos[1] + other.dim[1])
+        dim = sub(pos2, pos1)
+        area_observed = dim[0] * dim[1]
+        area_expected = (self.dim[0] + other.dim[0]) * (self.dim[1] + other.dim[1])
+        return area_expected >= area_observed
     
 
 def main():
@@ -35,7 +46,7 @@ def main():
     enemy_init_pos = screen_dim[0] - paddle_dim[0], screen_dim[1] / 2 - paddle_dim[1] / 2
 
     paddle_speed = 1
-    ball_speed = 1
+    ball_speed = .5
 
     pygame.init()
     pygame.display.set_caption('Pong')
@@ -43,21 +54,24 @@ def main():
 
     game_objects = list()
 
-    player = GameObject(player_init_pos, paddle_dim)
-    enemy = GameObject(enemy_init_pos, paddle_dim)
-    ball = GameObject(scale(screen_dim, .5), ball_dim, (0, 122, 255))
+    player = Rectangle(player_init_pos, paddle_dim)
+    enemy = Rectangle(enemy_init_pos, paddle_dim)
+    ball = Rectangle(scale(screen_dim, .5), ball_dim, (0, 122, 255))
+    top = Rectangle((0, 0), (screen_dim[0], 1), (255, 0, 0))
+    bot = Rectangle((0, screen_dim[1]), (screen_dim[0], 1), (255, 0, 0))
 
     game_objects.append(ball)
     game_objects.append(player)
     game_objects.append(enemy)
 
-    ball.vel = -ball_speed, 0
+
+
+    ball.vel = -ball_speed, ball_speed
 
     # Input variables
     w_pressed = False
     s_pressed = False
     space_pressed = False
-    mouse_pos = (0, 0)
 
     previous_time = pygame.time.get_ticks()
     running = True
@@ -89,15 +103,10 @@ def main():
                     s_pressed = False
                 if event.key == pygame.K_SPACE:
                     space_pressed = False
-
-            if event.type == pygame.MOUSEMOTION:
-                mouse_pos = pygame.mouse.get_pos()
-            
-            left_clicking = pygame.mouse.get_pressed()[0]
             
         ### GAME LOGIC ###
         if w_pressed and s_pressed:
-            player.vel = 0,0
+            player.vel = 0, 0
         elif w_pressed:
             player.vel = 0, -paddle_speed 
         elif s_pressed:
@@ -107,11 +116,21 @@ def main():
         if space_pressed:
             pass
 
-        if left_clicking:
-            print(mouse_pos)
+        if ball.intersects(player):
+            ball.vel = -ball.vel[0], ball.vel[1]
+        if ball.intersects(enemy):
+            ball.vel = -ball.vel[0], ball.vel[1]
+        if ball.intersects(top):
+            ball.vel = ball.vel[0], -ball.vel[1]
+        if ball.intersects(bot):
+            ball.vel = ball.vel[0], -ball.vel[1]
+
+        dif = ball.pos[1] - enemy.pos[1]
+        if dif != 0:
+            enemy.vel = 0, dif / abs(dif) * paddle_speed
 
         for game_object in game_objects:
-            game_object.update_position(delta_time)
+            game_object.update_pos(delta_time)
 
 
         ### DISPLAY ###
