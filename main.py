@@ -8,52 +8,50 @@ def scale(a, c):
     return tuple(map(lambda x: x * c, a))
 
 def clear_screen(screen):
-    screen.fill((0,0,0))
+    screen.fill((0, 0, 0))
 
 class GameObject(object):
 
-    def __init__(self, position, size, color = (255, 255, 255)):
+    def __init__(self, pos, dim, color = (255, 255, 255)):
         self.color = color
-        self.rect = pygame.Rect(position, size)
-        self.velocity = (0, 0)
+        self.pos = pos
+        self.dim = dim
+        self.vel = (0, 0)
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+        pygame.draw.rect(screen, self.color, self.pos + self.dim)
 
     def update_position(self, delta_time):
-        self.rect.move_ip(scale(self.velocity, delta_time))
+        self.pos = add(self.pos, scale(self.vel, delta_time))
     
 
 def main():
 
-    fps = 60
-    screen_dimensions = 800, 600
-    paddle_dimensions = 20, 100
-    ball_dimensions = 20, 20
-    player_paddle_init_pos = 0, screen_dimensions[1] / 2 - paddle_dimensions[1] / 2
-    enemy_paddle_init_pos = screen_dimensions[0] - paddle_dimensions[0], screen_dimensions[1] / 2 - paddle_dimensions[1] / 2
+    fps = 240
+    screen_dim = 800, 600
+    paddle_dim = 20, 100
+    ball_dim = 20, 20
+    player_init_pos = 0, screen_dim[1] / 2 - paddle_dim[1] / 2
+    enemy_init_pos = screen_dim[0] - paddle_dim[0], screen_dim[1] / 2 - paddle_dim[1] / 2
 
     paddle_speed = 1
     ball_speed = 1
 
     pygame.init()
     pygame.display.set_caption('Pong')
-    screen = pygame.display.set_mode(screen_dimensions)
+    screen = pygame.display.set_mode(screen_dim)
 
     game_objects = list()
 
-    game_area = pygame.Rect((0, 0), screen_dimensions)
+    player = GameObject(player_init_pos, paddle_dim)
+    enemy = GameObject(enemy_init_pos, paddle_dim)
+    ball = GameObject(scale(screen_dim, .5), ball_dim, (0, 122, 255))
 
-    player_paddle = GameObject(player_paddle_init_pos, paddle_dimensions)
-    enemy_paddle = GameObject(enemy_paddle_init_pos, paddle_dimensions)
-    ball = GameObject(scale(screen_dimensions, .5), ball_dimensions)
     game_objects.append(ball)
-    game_objects.append(player_paddle)
-    game_objects.append(enemy_paddle)
+    game_objects.append(player)
+    game_objects.append(enemy)
 
-
-    # TODO remove
-    ball.velocity = ball_speed, 0
+    ball.vel = -ball_speed, 0
 
     # Input variables
     w_pressed = False
@@ -98,15 +96,14 @@ def main():
             left_clicking = pygame.mouse.get_pressed()[0]
             
         ### GAME LOGIC ###
- 
         if w_pressed and s_pressed:
-            player_paddle.velocity = 0,0
+            player.vel = 0,0
         elif w_pressed:
-            player_paddle.velocity = 0, -paddle_speed 
+            player.vel = 0, -paddle_speed 
         elif s_pressed:
-            player_paddle.velocity = 0, paddle_speed
+            player.vel = 0, paddle_speed
         else:
-            player_paddle.velocity = 0, 0
+            player.vel = 0, 0
         if space_pressed:
             pass
 
@@ -115,14 +112,6 @@ def main():
 
         for game_object in game_objects:
             game_object.update_position(delta_time)
-
-        player_paddle.rect.clamp_ip(game_area)
-
-        if player_paddle.rect.colliderect(ball):
-            ball.velocity = -ball.velocity[0], ball.velocity[1]
-        
-        if enemy_paddle.rect.colliderect(ball):
-            ball.velocity = -ball.velocity[0], ball.velocity[1]
 
 
         ### DISPLAY ###
