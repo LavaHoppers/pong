@@ -1,6 +1,8 @@
 import pygame
 import random
 
+from pygame.constants import GL_MULTISAMPLEBUFFERS
+
 def add(a: tuple, b: tuple) -> tuple:
     return tuple(map(lambda x, y: x + y, a, b))
 
@@ -14,7 +16,7 @@ def r_sign():
     return 1 if random.random() < 0.5 else -1
 
 def clear_screen(screen):
-    screen.fill((0, 0, 0))
+    screen.fill((38, 70, 83))
 
 class Rectangle(object):
 
@@ -39,9 +41,10 @@ class Rectangle(object):
     
 class Text(object):
 
-    def __init__(self, font, size, text):
+    def __init__(self, font, size, text, color):
         self.font = pygame.font.SysFont(font, size)
-        self.img = self.font.render(text, True, (64, 64, 64))
+        self.color = color
+        self.img = self.font.render(text, True, self.color)
         self.pos = 0, 0
         self.rect = self.img.get_rect()
 
@@ -49,11 +52,11 @@ class Text(object):
         self.pos = pos
     
     def draw(self, screen):
-        pygame.draw.rect(self.img, (0, 0, 0), self.rect, 1)
+        pygame.draw.rect(self.img, (38, 70, 83), self.rect, 1)
         screen.blit(self.img, self.pos)
 
     def set_text(self, text: str) -> None:
-        self.img = self.font.render(text, True, (64, 64, 64))
+        self.img = self.font.render(text, True, self.color)
 
     def update_pos(self, delta_time):
         pass
@@ -64,8 +67,8 @@ def main():
     screen_dim = 800, 600
     paddle_dim = 20, 100
     ball_dim = 15, 15
-    player_init_pos = 40, screen_dim[1] / 2 - paddle_dim[1] / 2
-    enemy_init_pos = screen_dim[0] - paddle_dim[0] - 40, screen_dim[1] / 2 - paddle_dim[1] / 2
+    player_init_pos = 15, screen_dim[1] / 2 - paddle_dim[1] / 2
+    enemy_init_pos = screen_dim[0] - paddle_dim[0] - 15, screen_dim[1] / 2 - paddle_dim[1] / 2
     ball_init_pos = sub(scale(screen_dim, .5), scale(ball_dim, .5))
 
     player_speed = .75
@@ -81,17 +84,24 @@ def main():
     player_score = 0
     enemy_score = 0
 
-    player_score_text = Text('roboto.ttf', 122, str(player_score))
+    player_score_text = Text('roboto.ttf', 122, str(player_score), (244, 162, 97))
     player_score_text.set_pos((180, 50))
     game_objects.append(player_score_text)
 
-    enemy_score_text = Text('roboto.ttf', 122, str(enemy_score))
+    enemy_score_text = Text('roboto.ttf', 122, str(enemy_score), (244, 162, 97))
     enemy_score_text.set_pos((580, 50))
     game_objects.append(enemy_score_text)
 
-    player = Rectangle(player_init_pos, paddle_dim)
-    enemy = Rectangle(enemy_init_pos, paddle_dim)
-    ball = Rectangle(ball_init_pos, ball_dim, (0, 122, 255))
+    start_text1 = Text('roboto.ttf', 32, "Use W and S to move", (233, 196, 106))
+    start_text1.set_pos((290, 400))
+    start_text2 = Text('roboto.ttf', 72, 'Press space to begin', (233, 196, 106))
+    start_text2.set_pos((160, 420))
+    game_objects.append(start_text1)
+    game_objects.append(start_text2)
+
+    player = Rectangle(player_init_pos, paddle_dim, (42, 157, 143))
+    enemy = Rectangle(enemy_init_pos, paddle_dim, (231, 111, 81))
+    ball = Rectangle((-100, -100), ball_dim, (233, 196, 106))
     top = Rectangle((0, -50), (screen_dim[0], 50))
     bot = Rectangle((0, screen_dim[1]), (screen_dim[0], 50))
     left = Rectangle((-50, -50), (50, screen_dim[1] + 100))
@@ -151,6 +161,9 @@ def main():
         else:
             player.vel = 0, 0
         if space_pressed and new_round:
+            start_text1.set_text('')
+            start_text2.set_text('')
+            ball.pos = ball_init_pos
             ball.vel = r_sign() * ball_speed, r_sign() * ball_speed
             new_round = False
 
@@ -163,29 +176,37 @@ def main():
         if ball_after.intersects(top) or ball_after.intersects(bot):
             ball.vel = ball.vel[0], -ball.vel[1]
         if ball_after.intersects(left):
-            ball.pos = ball_init_pos
-            ball.vel = (0,0)
+            ball.pos = -100, -100
+            ball.vel = 0, 0
             new_round = True
             enemy_score += 1
             enemy_score_text.set_text(str(enemy_score))
         if ball_after.intersects(right):
-            ball.pos = ball_init_pos
-            ball.vel = (0,0)
+            ball.pos = -100, -100
+            ball.vel = 0, 0
             new_round = True
             player_score += 1
             player_score_text.set_text(str(player_score))
-        
 
         if new_round:
             enemy.vel = 0, 0
         else:
             dif = (ball.pos[1] + ball.dim[1] / 2) - (enemy.pos[1] + enemy.dim[1] / 2)
-            if dif != 0:
+            if dif == 0:
+                enemy.vel = 0, 0
+            else:
                 enemy.vel = 0, dif / abs(dif) * enemy_speed
+        
+        enemy_after = Rectangle(add(enemy.pos, enemy.vel), paddle_dim)
+        if enemy_after.intersects(top) or enemy_after.intersects(bot):
+            enemy.vel = 0, 0
 
+        player_after = Rectangle(add(player.pos, player.vel), paddle_dim)
+        if player_after.intersects(top) or player_after.intersects(bot):
+            player.vel = 0, 0
+            
         for game_object in game_objects:
             game_object.update_pos(delta_time)
-
 
         ### DISPLAY ###
         if int(pygame.time.get_ticks()) % (1000 // fps) == 0:
@@ -195,7 +216,6 @@ def main():
                 game_object.draw(screen)
             
             pygame.display.update()
-
 
 
     pygame.quit()
